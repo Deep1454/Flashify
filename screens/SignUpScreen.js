@@ -1,71 +1,183 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Easing,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const SignUpScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
+const FloatingInput = ({ label, value, onChangeText, secureTextEntry, keyboardType }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const labelPosition = new Animated.Value(value ? 1 : 0);
 
-  const handleSubmit = () => {
-    navigation.navigate('SignIn');
+  const handleFocus = () => {
+    setIsFocused(true);
+    Animated.timing(labelPosition, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleBlur = () => {
+    if (!value) {
+      setIsFocused(false);
+      Animated.timing(labelPosition, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
+  const labelStyle = {
+    position: 'absolute',
+    left: 12,
+    top: labelPosition.interpolate({
+      inputRange: [0, 1],
+      outputRange: [16, -8],
+    }),
+    fontSize: labelPosition.interpolate({
+      inputRange: [0, 1],
+      outputRange: [16, 12],
+    }),
+    color: isFocused ? '#7B83EB' : '#A1A1A1',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 4,
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Welcome to Flashify</Text>
-      <Text style={styles.subHeading}>explore a world of possibilities.</Text>
-
+    <View style={styles.inputContainer}>
+      <Animated.Text style={labelStyle}>{label}</Animated.Text>
       <TextInput
+        value={value}
+        onChangeText={onChangeText}
         style={styles.input}
-        placeholder="Enter your username"
-        placeholderTextColor="#B6BBC4"
-        value={username}
-        onChangeText={setUsername}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
       />
+    </View>
+  );
+};
 
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your email"
-        placeholderTextColor="#B6BBC4"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
+const FlipCardScreen = ({ navigation }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const rotateAnimation = useState(new Animated.Value(0))[0];
 
-      <View style={styles.passwordContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your password"
-          placeholderTextColor="#B6BBC4"
-          secureTextEntry={!passwordVisible}
-          value={password}
-          onChangeText={setPassword}
-        />
-        <TouchableOpacity
-          onPress={() => setPasswordVisible(!passwordVisible)}
-          style={styles.passwordIconContainer}
-        >
-          <Ionicons
-            name={passwordVisible ? 'eye' : 'eye-off'}
-            size={24}
-            color="#7E9FFD"
-          />
-        </TouchableOpacity>
-      </View>
+  const flipCard = () => {
+    Animated.timing(rotateAnimation, {
+      toValue: isFlipped ? 0 : 1,
+      duration: 800,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => setIsFlipped(!isFlipped));
+  };
 
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
+  const frontRotateY = rotateAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
 
-      <Text
-        style={styles.signInText}
-        onPress={() => navigation.navigate('SignIn')}
+  const backRotateY = rotateAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['180deg', '360deg'],
+  });
+
+  const navigateToHome = () => {
+    navigation.navigate('Home');
+  };
+
+  return (
+    <LinearGradient
+      colors={['#7B83EB', '#ADA9FF', '#EDEDF2']}
+      style={styles.container}
+    >
+      {/* Front Side - Sign Up */}
+      <Animated.View
+        style={[
+          styles.card,
+          {
+            transform: [
+              { perspective: 1000 },
+              { rotateY: frontRotateY },
+            ],
+          },
+          !isFlipped && styles.cardVisible,
+        ]}
       >
-        Already have an account? <Text style={styles.signInLink}>Sign In</Text>
-      </Text>
-    </ScrollView>
+        <LinearGradient
+          colors={['#FFFFFF', '#F3F4F9']}
+          style={styles.cardContent}
+        >
+          <Text style={styles.heading}>Welcome to Flashify</Text>
+          <Text style={styles.subHeading}>Unlock the future of possibilities.</Text>
+          <FloatingInput label="Username" value="" onChangeText={() => {}} />
+          <FloatingInput label="Email" value="" onChangeText={() => {}} keyboardType="email-address" />
+          <FloatingInput label="Password" value="" onChangeText={() => {}} secureTextEntry />
+          <TouchableOpacity style={styles.button} onPress={flipCard}>
+            <LinearGradient
+              colors={['#7B83EB', '#ADA9FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buttonInner}
+            >
+              <Text style={styles.buttonText}>Sign Up</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={flipCard}>
+            <Text style={styles.linkText}>
+              Already have an account? <Text style={styles.linkHighlight}>Sign In</Text>
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </Animated.View>
+
+      {/* Back Side - Sign In */}
+      <Animated.View
+        style={[
+          styles.card,
+          styles.cardBack,
+          {
+            transform: [
+              { perspective: 1000 },
+              { rotateY: backRotateY },
+            ],
+          },
+          isFlipped && styles.cardVisible,
+        ]}
+      >
+        <LinearGradient
+          colors={['#FFFFFF', '#F3F4F9']}
+          style={styles.cardContent}
+        >
+          <Text style={styles.heading}>Welcome Back!</Text>
+          <Text style={styles.subHeading}>Let's get you signed in.</Text>
+          <FloatingInput label="Email" value="" onChangeText={() => {}} keyboardType="email-address" />
+          <FloatingInput label="Password" value="" onChangeText={() => {}} secureTextEntry />
+          <TouchableOpacity style={styles.button} onPress={navigateToHome}>
+            <LinearGradient
+              colors={['#7B83EB', '#ADA9FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buttonInner}
+            >
+              <Text style={styles.buttonText}>Sign In</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={flipCard}>
+            <Text style={styles.linkText}>
+              Create a new account? <Text style={styles.linkHighlight}>Sign Up</Text>
+            </Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </Animated.View>
+    </LinearGradient>
   );
 };
 
@@ -74,72 +186,85 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF', // Primary color as background
+  },
+  card: {
+    width: 350,
+    height: 500,
+    borderRadius: 15,
+    position: 'absolute',
+    backfaceVisibility: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardContent: {
+    flex: 1,
+    borderRadius: 15,
     padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardBack: {
+    transform: [{ rotateY: '180deg' }],
+  },
+  cardVisible: {
+    zIndex: 1,
   },
   heading: {
-    fontSize: 26,
-    color: '#7E9FFD', // Secondary color
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#4D4E8C',
+    marginBottom: 15,
   },
   subHeading: {
     fontSize: 16,
-    color: '#B6BBC4',
+    color: '#7A7B9E',
     textAlign: 'center',
     marginBottom: 30,
   },
-  input: {
-    height: 50,
+  inputContainer: {
     width: '100%',
-    backgroundColor: '#F5F5F5', // Subtle contrast from the primary background
-    borderRadius: 12,
-    paddingLeft: 12,
     marginBottom: 20,
-    color: '#333333',
-    fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E0E0E0', // Light border for modern look
+    borderRadius: 8,
+    borderColor: '#E1E1E1',
+    backgroundColor: '#FDFDFE',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  passwordContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  passwordIconContainer: {
-    position: 'absolute',
-    right: 12,
-    top: 14,
+  input: {
+    height: 40,
+    fontSize: 16,
+    color: '#333333',
   },
   button: {
-    backgroundColor: '#7E9FFD', // Secondary color for call-to-action
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    width: '100%',
-    alignItems: 'center',
-    borderRadius: 12,
     marginTop: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    width: '100%',
+    borderRadius: 8,
+  },
+  buttonInner: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   buttonText: {
-    color: '#FFFFFF', // Primary color for contrast
+    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '600',
   },
-  signInText: {
-    color: '#333333',
+  linkText: {
     marginTop: 20,
-    fontSize: 16,
+    fontSize: 14,
+    color: '#7A7B9E',
     textAlign: 'center',
   },
-  signInLink: {
-    color: '#7E9FFD', // Secondary color for link
+  linkHighlight: {
+    color: '#7B83EB',
     fontWeight: '600',
   },
 });
 
-export default SignUpScreen;
+export default FlipCardScreen;

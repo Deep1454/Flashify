@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Animated } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const HomeScreen = () => {
   const [folders, setFolders] = useState([
@@ -22,15 +23,20 @@ const HomeScreen = () => {
   };
 
   const renderFolder = ({ item }) => (
-    <Animated.View style={styles.folderContainer}>
-      <Ionicons name="folder" size={40} color="#FFFFFF" style={styles.folderIcon} />
+    <View
+      style={styles.folderContainer}
+    >
+      <Ionicons name="folder" size={80} color="#7B83EB" style={styles.folderIcon} />
       <Text style={styles.folderText}>{item.name}</Text>
-    </Animated.View>
+    </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Welcome to Flashify</Text>
+    <LinearGradient
+      colors={['#E0E7FF', '#F1F5FF']}
+      style={styles.container}
+    >
+      <View style={styles.spacer} />
 
       <View style={styles.foldersHeader}>
         <Text style={styles.sectionTitle}>Your Folders</Text>
@@ -38,7 +44,7 @@ const HomeScreen = () => {
           style={styles.createFolderButton}
           onPress={() => setIsCreatingFolder(!isCreatingFolder)}
         >
-          <Ionicons name="add-circle" size={24} color="#D8C4B6" />
+          <FontAwesome5 name="folder-plus" size={35} color="#7B83EB" />
         </TouchableOpacity>
       </View>
 
@@ -46,7 +52,7 @@ const HomeScreen = () => {
         data={folders}
         renderItem={renderFolder}
         keyExtractor={(item) => item.id}
-        horizontal
+        numColumns={3}
         contentContainerStyle={styles.foldersList}
       />
 
@@ -55,153 +61,174 @@ const HomeScreen = () => {
           <TextInput
             style={styles.newFolderInput}
             placeholder="Enter folder name"
-            placeholderTextColor="#B6BBC4"
+            placeholderTextColor="#7B83EB"
             value={newFolderName}
             onChangeText={setNewFolderName}
           />
           <TouchableOpacity style={styles.addFolderButton} onPress={handleAddFolder}>
-            <Ionicons name="checkmark-circle" size={24} color="#FFFFFF" />
+            <Ionicons name="checkmark-circle" size={32} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       )}
 
       <View style={styles.flashcardContainer}>
-        <Text style={styles.sectionTitle}>Create Flashcard</Text>
-        <View style={styles.inputWrapper}>
+        <View style={styles.singleLineWrapper}>
           <TouchableOpacity style={styles.textContainer}>
-            <TextInput style={styles.input} placeholder="Enter by Topic" placeholderTextColor="#B6BBC4" />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter by Topic"
+              placeholderTextColor="#7B83EB"
+            />
           </TouchableOpacity>
           <TouchableOpacity style={styles.textContainer}>
-            <TextInput style={styles.input} placeholder="Enter by Text" placeholderTextColor="#B6BBC4" />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter by Text"
+              placeholderTextColor="#7B83EB"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.goButton}>
+            <LinearGradient
+              colors={['#7B83EB', '#ADA9FF']}
+              style={styles.gradientButton}
+            >
+              <Ionicons name="arrow-forward" size={32} color="#FFFFFF" />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.goButton}>
-          <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
       </View>
-    </View>
+      <View style={styles.spacer} />
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#213555',
-      padding: 20,
-      alignItems: 'center',
-    },
-    heading: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: '#F5EFE7',
-      textAlign: 'center',
-      marginVertical: 20,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      color: '#D8C4B6',
-      marginTop: 20,
-      textAlign: 'center',
-    },
-    foldersHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        width: '100%', 
-        paddingHorizontal: 20, 
-        marginBottom: 10,
-      },
-    createFolderButton: {
-        padding: 10, 
-        marginLeft: 10, 
-    },
-    foldersList: {
-        flexDirection: 'row',
-        flexWrap: 'wrap', 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        gap: 15, 
-        marginTop: 20, 
-        width: '100%', 
-    },
-    folderContainer: {
-        width: 100,
-        height: 120,
-        marginHorizontal: 10, 
-        marginVertical: 10, 
-        backgroundColor: '#3E5879',
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 5,
-    },
-    folderIcon: {
-      marginBottom: 10,
-    },
-    folderText: {
-      color: '#FFFFFF',
-      fontSize: 16,
-    },
-    newFolderContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: 15,
-      width: '100%',
-    },
-    newFolderInput: {
-      flex: 1,
-      backgroundColor: '#3E5879',
-      paddingVertical: 12,
-      paddingHorizontal: 15,
-      borderRadius: 12,
-      color: '#FFFFFF',
-      fontSize: 16,
-    },
-    addFolderButton: {
-      marginLeft: 10,
-      backgroundColor: '#D8C4B6',
-      padding: 10,
-      borderRadius: 12,
-    },
-    flashcardContainer: {
-      marginTop: 40,
-      alignItems: 'center',
-      width: '100%',
-    },
-    inputWrapper: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      width: '100%',
-      marginBottom: 20,
-    },
-    textContainer: {
-      flex: 1,
-      marginHorizontal: 5,
-    },
-    input: {
-      backgroundColor: '#3E5879',
-      paddingVertical: 12,
-      paddingHorizontal: 15,
-      borderRadius: 12,
-      color: '#FFFFFF',
-      textAlign: 'center',
-      fontSize: 16,
-    },
-    goButton: {
-      backgroundColor: '#D8C4B6',
-      padding: 15,
-      borderRadius: 50,
-      alignItems: 'center',
-      justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 5,
-    },
-  });
-  
+  container: {
+    flex: 1,
+    padding: 20,
+    alignItems: 'center',
+  },
+  spacer: {
+    height: 40,
+  },
+  sectionTitle: {
+    fontSize: 26,
+    color: '#4D4D9A',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  foldersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  createFolderButton: {
+    padding: 10,
+  },
+  foldersList: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  folderContainer: {
+    width: 100,
+    height: 120,
+    marginHorizontal: 10,
+    marginVertical: 15,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  folderIcon: {
+    textShadowColor: '#000',
+    textShadowOffset: { width: 1, height: 3 },
+    textShadowRadius: 4,
+  },
+  folderText: {
+    color: '#4D4D9A',
+    fontSize: 16,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 9,
+  },
+  newFolderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    width: '100%',
+  },
+  newFolderInput: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    color: '#333333',
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  addFolderButton: {
+    marginLeft: 10,
+    backgroundColor: '#7B83EB',
+    padding: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  flashcardContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+    width: '100%',
+  },
+  singleLineWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  textContainer: {
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 12,
+    color: '#333333',
+    textAlign: 'center',
+    fontSize: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  goButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  gradientButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 50,
+  },
+});
 
 export default HomeScreen;
