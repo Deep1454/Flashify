@@ -13,30 +13,34 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Sign In</Text>
-      
+      <Text style={styles.heading}>Welcome Back!</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#B6BBC4"  
+        placeholder="Enter your email"
+        placeholderTextColor="#B6BBC4"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
       />
+
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#B6BBC4"  
+          placeholder="Enter your password"
+          placeholderTextColor="#B6BBC4"
           secureTextEntry={!passwordVisible}
           value={password}
           onChangeText={setPassword}
         />
-        <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} style={styles.passwordIconContainer}>
+        <TouchableOpacity
+          onPress={() => setPasswordVisible(!passwordVisible)}
+          style={styles.passwordIconContainer}
+        >
           <Ionicons
             name={passwordVisible ? 'eye' : 'eye-off'}
             size={24}
-            color="#B6BBC4"
+            color="#7E9FFD"
           />
         </TouchableOpacity>
       </View>
@@ -45,8 +49,14 @@ const SignInScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
 
-      <Text style={styles.signUpText} onPress={() => navigation.navigate('SignUp')}>
-        Don't have an account? Sign Up
+      <Text style={styles.signUpText}>
+        Don't have an account?{' '}
+        <Text
+          style={styles.signUpLink}
+          onPress={() => navigation.navigate('SignUp')}
+        >
+          Sign Up
+        </Text>
       </Text>
     </ScrollView>
   );
@@ -57,29 +67,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#161A30',
+    backgroundColor: '#FFFFFF', // Primary color
     padding: 20,
   },
   heading: {
-    fontSize: 28,
-    color: '#FFFFFF', 
-    marginBottom: 30,
+    fontSize: 26,
+    color: '#7E9FFD', // Secondary color
     fontWeight: 'bold',
+    marginBottom: 40,
   },
   input: {
     height: 50,
     width: '100%',
-    borderColor: '#FFFFFF', 
-    borderWidth: 1,
+    backgroundColor: '#F5F5F5', // Light gray for input fields
     borderRadius: 12,
     paddingLeft: 12,
     marginBottom: 20,
-    color: '#FFFFFF', 
+    color: '#333333',
     fontSize: 16,
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E0E0E0', // Subtle border for better definition
   },
   passwordContainer: {
     width: '100%',
@@ -90,30 +97,35 @@ const styles = StyleSheet.create({
   passwordIconContainer: {
     position: 'absolute',
     right: 12,
-    top: 14, 
+    top: 14,
   },
   button: {
-    backgroundColor: '#0A3D6A', 
-    padding: 16,
+    backgroundColor: '#7E9FFD', // Secondary color
+    paddingVertical: 16,
+    paddingHorizontal: 32,
     width: '100%',
     alignItems: 'center',
     borderRadius: 12,
+    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   buttonText: {
-    color: '#FFFFFF', 
+    color: '#FFFFFF', // White text for contrast
     fontSize: 18,
     fontWeight: '600',
   },
   signUpText: {
-    color: '#B6BBC4',
+    color: '#333333',
     marginTop: 20,
-    textDecorationLine: 'underline',
     fontSize: 16,
-    borderRadius: 12, 
+    textAlign: 'center',
+  },
+  signUpLink: {
+    color: '#7E9FFD', // Secondary color for link
+    fontWeight: '600',
   },
 });
 

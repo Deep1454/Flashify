@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import SignInScreen from './SignInScreen';
 
 const SignUpScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
@@ -10,47 +9,48 @@ const SignUpScreen = ({ navigation }) => {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleSubmit = () => {
-  
     navigation.navigate('SignIn');
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Create an Account</Text>
-      
+      <Text style={styles.heading}>Welcome to Flashify</Text>
+      <Text style={styles.subHeading}>explore a world of possibilities.</Text>
+
       <TextInput
         style={styles.input}
-        placeholder="Username"
-        placeholderTextColor="#B6BBC4"  
+        placeholder="Enter your username"
+        placeholderTextColor="#B6BBC4"
         value={username}
         onChangeText={setUsername}
       />
 
-      {/* Email Input */}
       <TextInput
         style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#B6BBC4"  
+        placeholder="Enter your email"
+        placeholderTextColor="#B6BBC4"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
       />
 
-      {/* Password Input */}
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#B6BBC4"  
+          placeholder="Enter your password"
+          placeholderTextColor="#B6BBC4"
           secureTextEntry={!passwordVisible}
           value={password}
           onChangeText={setPassword}
         />
-        <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} style={styles.passwordIconContainer}>
+        <TouchableOpacity
+          onPress={() => setPasswordVisible(!passwordVisible)}
+          style={styles.passwordIconContainer}
+        >
           <Ionicons
             name={passwordVisible ? 'eye' : 'eye-off'}
             size={24}
-            color="#B6BBC4"
+            color="#7E9FFD"
           />
         </TouchableOpacity>
       </View>
@@ -59,8 +59,11 @@ const SignUpScreen = ({ navigation }) => {
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
-      <Text style={styles.signInText} onPress={() => navigation.navigate('SignIn')}>
-        Already have an account? Sign In
+      <Text
+        style={styles.signInText}
+        onPress={() => navigation.navigate('SignIn')}
+      >
+        Already have an account? <Text style={styles.signInLink}>Sign In</Text>
       </Text>
     </ScrollView>
   );
@@ -71,29 +74,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#161A30', 
+    backgroundColor: '#FFFFFF', // Primary color as background
     padding: 20,
   },
   heading: {
-    fontSize: 28,
-    color: '#FFFFFF',
-    marginBottom: 30,
+    fontSize: 26,
+    color: '#7E9FFD', // Secondary color
     fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subHeading: {
+    fontSize: 16,
+    color: '#B6BBC4',
+    textAlign: 'center',
+    marginBottom: 30,
   },
   input: {
     height: 50,
     width: '100%',
-    borderColor: '#FFFFFF', 
-    borderWidth: 1,
+    backgroundColor: '#F5F5F5', // Subtle contrast from the primary background
     borderRadius: 12,
     paddingLeft: 12,
     marginBottom: 20,
-    color: '#FFFFFF', 
+    color: '#333333',
     fontSize: 16,
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E0E0E0', // Light border for modern look
   },
   passwordContainer: {
     width: '100%',
@@ -104,30 +110,35 @@ const styles = StyleSheet.create({
   passwordIconContainer: {
     position: 'absolute',
     right: 12,
-    top: 14, 
+    top: 14,
   },
   button: {
-    backgroundColor: '#0A3D6A', 
-    padding: 16,
+    backgroundColor: '#7E9FFD', // Secondary color for call-to-action
+    paddingVertical: 16,
+    paddingHorizontal: 32,
     width: '100%',
     alignItems: 'center',
     borderRadius: 12,
+    marginTop: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   buttonText: {
-    color: '#FFFFFF', 
+    color: '#FFFFFF', // Primary color for contrast
     fontSize: 18,
     fontWeight: '600',
   },
   signInText: {
-    color: '#B6BBC4', 
+    color: '#333333',
     marginTop: 20,
-    textDecorationLine: 'underline',
     fontSize: 16,
-    borderRadius: 12, 
+    textAlign: 'center',
+  },
+  signInLink: {
+    color: '#7E9FFD', // Secondary color for link
+    fontWeight: '600',
   },
 });
 
