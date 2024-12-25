@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  Animated,
+  Easing,
+} from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -8,138 +20,236 @@ const HomeScreen = () => {
     { id: '1', name: 'Math' },
     { id: '2', name: 'Science' },
     { id: '3', name: 'History' },
+    { id: '4', name: 'Math' },
+    { id: '5', name: 'Science' },
+    { id: '6', name: 'History' },
+    { id: '7', name: 'Math' },
+    { id: '8', name: 'Science' },
+    { id: '9', name: 'History' },
+    { id: '10', name: 'Math' },
+    { id: '11', name: 'Science' },
+    { id: '12', name: 'History' },
+    { id: '13', name: 'Math' },
+    { id: '14', name: 'Science' },
+    { id: '15', name: 'History' },
   ]);
 
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [isTopicSelected, setIsTopicSelected] = useState(false);
+  const [togglePosition] = useState(new Animated.Value(0)); // Animation for the toggle
+
+  const handleToggle = () => {
+    const toValue = isTopicSelected ? 0 : 1; // 0 = Text, 1 = Topic
+    Animated.timing(togglePosition, {
+      toValue,
+      duration: 300,
+      easing: Easing.out(Easing.circle),
+      useNativeDriver: false,
+    }).start();
+    setIsTopicSelected(!isTopicSelected);
+  };
 
   const handleAddFolder = () => {
     if (newFolderName.trim() !== '') {
       const newFolder = { id: Date.now().toString(), name: newFolderName };
       setFolders([...folders, newFolder]);
       setNewFolderName('');
-      setIsCreatingFolder(false);
+      setIsModalVisible(false);
     }
   };
 
+  const filteredFolders = folders.filter((folder) =>
+    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const renderFolder = ({ item }) => (
-    <View
-      style={styles.folderContainer}
-    >
+    <View style={styles.folderContainer}>
       <Ionicons name="folder" size={80} color="#7B83EB" style={styles.folderIcon} />
       <Text style={styles.folderText}>{item.name}</Text>
     </View>
   );
 
   return (
-    <LinearGradient
-      colors={['#E0E7FF', '#F1F5FF']}
+    <KeyboardAvoidingView
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.spacer} />
-
-      <View style={styles.foldersHeader}>
-        <Text style={styles.sectionTitle}>Your Folders</Text>
-        <TouchableOpacity
-          style={styles.createFolderButton}
-          onPress={() => setIsCreatingFolder(!isCreatingFolder)}
-        >
-          <FontAwesome5 name="folder-plus" size={35} color="#7B83EB" />
-        </TouchableOpacity>
+      <View style={styles.topContainer}>
+        <LinearGradient colors={['#7B83EB', '#4D4D9A']} style={styles.gradientTopContainer}>
+          <Text style={styles.sectionTitle}>Flashify</Text>
+          <View style={styles.searchHeader}>
+            <View style={styles.searchBarContainer}>
+              <Ionicons name="search" size={20} color="#7B83EB" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchBar}
+                placeholder="Search folders"
+                placeholderTextColor="#7B83EB"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.createFolderButton}
+              onPress={() => setIsModalVisible(true)}
+            >
+              <FontAwesome5 name="folder-plus" size={40} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </View>
 
       <FlatList
-        data={folders}
+        data={filteredFolders}
         renderItem={renderFolder}
         keyExtractor={(item) => item.id}
         numColumns={3}
         contentContainerStyle={styles.foldersList}
       />
 
-      {isCreatingFolder && (
-        <View style={styles.newFolderContainer}>
-          <TextInput
-            style={styles.newFolderInput}
-            placeholder="Enter folder name"
-            placeholderTextColor="#7B83EB"
-            value={newFolderName}
-            onChangeText={setNewFolderName}
-          />
-          <TouchableOpacity style={styles.addFolderButton} onPress={handleAddFolder}>
-            <Ionicons name="checkmark-circle" size={32} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <View style={styles.flashcardContainer}>
-        <View style={styles.singleLineWrapper}>
-          <TouchableOpacity style={styles.textContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter by Topic"
-              placeholderTextColor="#7B83EB"
+      <View style={styles.bottomContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder={isTopicSelected ? 'Enter Topic' : 'Enter Text'}
+          placeholderTextColor="#7B83EB"
+          value={inputValue}
+          onChangeText={setInputValue}
+        />
+        <View style={styles.bottomRow}>
+          <TouchableOpacity style={styles.toggleWrapper} onPress={handleToggle}>
+            <Animated.View
+              style={[
+                styles.toggleIndicator,
+                {
+                  transform: [
+                    {
+                      translateX: togglePosition.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-7, 42],
+                      }),
+                    },
+                  ],
+                },
+              ]}
             />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.textContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter by Text"
-              placeholderTextColor="#7B83EB"
-            />
+            <Text style={[styles.toggleText, isTopicSelected]}>Topic</Text>
+            <Text style={[styles.toggleText, !isTopicSelected]}>Text</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.goButton}>
-            <LinearGradient
-              colors={['#7B83EB', '#ADA9FF']}
-              style={styles.gradientButton}
-            >
-              <Ionicons name="arrow-forward" size={32} color="#FFFFFF" />
-            </LinearGradient>
+            <Ionicons name="arrow-forward" size={32} color="#4D4D9A" />
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.spacer} />
-    </LinearGradient>
+
+      {/* Modal for creating a new folder */}
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create New Folder</Text>
+            <TextInput
+              style={styles.newFolderInput}
+              placeholder="Enter folder name"
+              placeholderTextColor="#7B83EB"
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+            />
+            <View style={styles.modalButtonsContainer}>
+              <TouchableOpacity
+                style={styles.addFolderButton}
+                onPress={handleAddFolder}
+              >
+                <Text style={styles.addFolderButtonText}>Add</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setIsModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     alignItems: 'center',
+    backgroundColor: '#E0E7FF',
   },
-  spacer: {
-    height: 40,
+  topContainer: {
+    width: '100%',
+    height: 190,
+    borderBottomLeftRadius: 50,
+    borderBottomRightRadius: 50,
+    overflow: 'hidden',
+  },
+  gradientTopContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 59,
   },
   sectionTitle: {
     fontSize: 26,
-    color: '#4D4D9A',
+    color: '#FFF',
     fontWeight: '700',
-    textAlign: 'center',
+    alignSelf: 'flex-start',
+    marginBottom: 10,
   },
-  foldersHeader: {
+  searchHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    width: '100%',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginTop: 5,
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    flex: 1,
+    marginRight: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchBar: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333333',
   },
   createFolderButton: {
     padding: 10,
   },
   foldersList: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    flexGrow: 1,
   },
   folderContainer: {
     width: 100,
     height: 120,
-    marginHorizontal: 10,
-    marginVertical: 15,
+    margin: 10,
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
@@ -156,78 +266,125 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 9,
   },
-  newFolderContainer: {
-    flexDirection: 'row',
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
-    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 15,
+    color: '#7B83EB',
   },
   newFolderInput: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 12,
-    color: '#333333',
-    fontSize: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-  addFolderButton: {
-    marginLeft: 10,
-    backgroundColor: '#7B83EB',
-    padding: 10,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  flashcardContainer: {
-    marginTop: 40,
-    alignItems: 'center',
     width: '100%',
+    backgroundColor: '#E0E7FF',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 15,
+    fontSize: 16,
+    color: '#7B83EB',
   },
-  singleLineWrapper: {
+  modalButtonsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
   },
-  textContainer: {
+  addFolderButton: {
+    backgroundColor: '#7B83EB',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
     flex: 1,
-    marginHorizontal: 5,
+    marginRight: 5,
+  },
+  addFolderButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: '#E0E7FF',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 5,
+  },
+  cancelButtonText: {
+    color: '#7B83EB',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  bottomContainer: {
+    width: '90%',
+    height: 90,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 28,
+    backgroundColor: '#FFFFFF',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  gradientBottomContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   input: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 12,
     paddingHorizontal: 15,
-    borderRadius: 12,
-    color: '#333333',
-    textAlign: 'center',
+    borderBottomRightRadius: 10,
     fontSize: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 2,
+    width: '100%',
   },
-  goButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  gradientButton: {
-    flex: 1,
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 50,
+    paddingHorizontal: 10,
+  },
+  toggleWrapper: {
+    width: 100,
+    height: 35,
+    backgroundColor: '#E0E7FF',
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    position: 'relative',
+  },
+  toggleIndicator: {
+    position: 'absolute',
+    width: 40,
+    height: 25,
+    backgroundColor: '#7B83EB',
+    borderRadius: 15,
+    zIndex: 1,
+    top: 5,
+  },
+  toggleText: {
+    fontSize: 13,
+    fontWeight: '600',
+    zIndex: 2,
+    color: '#7B83EB',
   },
 });
 
