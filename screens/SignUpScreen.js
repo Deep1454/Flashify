@@ -117,9 +117,9 @@ const FlipCardScreen = ({ navigation }) => {
         >
           <Text style={styles.heading}>Welcome to Flashify</Text>
           <Text style={styles.subHeading}>Unlock the future of possibilities.</Text>
-          <FloatingInput label="Username" value="" onChangeText={() => {}} />
-          <FloatingInput label="Email" value="" onChangeText={() => {}} keyboardType="email-address" />
-          <FloatingInput label="Password" value="" onChangeText={() => {}} secureTextEntry />
+          <FloatingInput label="Username" value="" onChangeText={() => { }} />
+          <FloatingInput label="Email" value="" onChangeText={() => { }} keyboardType="email-address" />
+          <FloatingInput label="Password" value="" onChangeText={() => { }} secureTextEntry />
           <TouchableOpacity style={styles.button} onPress={flipCard}>
             <LinearGradient
               colors={['#7B83EB', '#ADA9FF']}
@@ -158,8 +158,8 @@ const FlipCardScreen = ({ navigation }) => {
         >
           <Text style={styles.heading}>Welcome Back!</Text>
           <Text style={styles.subHeading}>Let's get you signed in.</Text>
-          <FloatingInput label="Email" value="" onChangeText={() => {}} keyboardType="email-address" />
-          <FloatingInput label="Password" value="" onChangeText={() => {}} secureTextEntry />
+          <FloatingInput label="Email" value="" onChangeText={() => { }} keyboardType="email-address" />
+          <FloatingInput label="Password" value="" onChangeText={() => { }} secureTextEntry />
           <TouchableOpacity style={styles.button} onPress={navigateToHome}>
             <LinearGradient
               colors={['#7B83EB', '#ADA9FF']}

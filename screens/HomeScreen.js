@@ -15,7 +15,7 @@ import {
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const [folders, setFolders] = useState([
     { id: '1', name: 'Math' },
     { id: '2', name: 'Science' },
@@ -66,10 +66,13 @@ const HomeScreen = () => {
   );
 
   const renderFolder = ({ item }) => (
-    <View style={styles.folderContainer}>
+    <TouchableOpacity
+      style={styles.folderContainer}
+      onPress={() => navigation.navigate('FlashCardScreen', { folderName: item.name })}
+    >
       <Ionicons name="folder" size={80} color="#7B83EB" style={styles.folderIcon} />
       <Text style={styles.folderText}>{item.name}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
