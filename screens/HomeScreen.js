@@ -257,11 +257,6 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
   },
-  folderIcon: {
-    textShadowColor: '#000',
-    textShadowOffset: { width: 1, height: 3 },
-    textShadowRadius: 4,
-  },
   folderText: {
     color: '#4D4D9A',
     fontSize: 16,

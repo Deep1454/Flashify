@@ -4,14 +4,17 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   Modal,
   Animated,
   Easing,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
-const FlashCardScreen = ({ route }) => {
+const { width } = Dimensions.get('window');
+
+const FlashCardScreen = ({ route, navigation }) => {
   const { folderName } = route.params;
 
   const [flashcards] = useState([
@@ -20,9 +23,9 @@ const FlashCardScreen = ({ route }) => {
     { id: '3', question: 'What is state?', answer: 'A way to store data in a component.' },
   ]);
 
-  const [selectedFlashcard, setSelectedFlashcard] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [rotateAnimation, setRotateAnimation] = useState(new Animated.Value(0));
   const [isFlipped, setIsFlipped] = useState(false);
-  const rotateAnimation = useState(new Animated.Value(0))[0];
 
   const flipCard = () => {
     Animated.timing(rotateAnimation, {
@@ -30,7 +33,9 @@ const FlashCardScreen = ({ route }) => {
       duration: 600,
       easing: Easing.out(Easing.ease),
       useNativeDriver: true,
-    }).start(() => setIsFlipped(!isFlipped));
+    }).start(() => {
+      setIsFlipped(!isFlipped);
+    });
   };
 
   const frontRotateY = rotateAnimation.interpolate({
@@ -44,45 +49,57 @@ const FlashCardScreen = ({ route }) => {
   });
 
   const closePopup = () => {
-    setSelectedFlashcard(null);
+    setSelectedIndex(null);
     setIsFlipped(false);
     rotateAnimation.setValue(0);
   };
-
-  const renderFlashcard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.flashcardItem}
-      onPress={() => setSelectedFlashcard(item)}
-    >
-      <Text style={styles.flashcardText}>{item.question}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
       <View style={styles.topContainer}>
         <LinearGradient colors={['#7B83EB', '#4D4D9A']} style={styles.gradientTopContainer}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={30} color="#FFF" />
+          </TouchableOpacity>
           <Text style={styles.sectionTitle}>{folderName}</Text>
         </LinearGradient>
       </View>
 
-      <FlatList
-        data={flashcards}
-        renderItem={renderFlashcard}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.flashcardList}
-      />
+      <View style={styles.flashcardGrid}>
+        {flashcards.map((item, index) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.flashcardCard}
+            onPress={() => {
+              setSelectedIndex(index);
+              setIsFlipped(false);
+              rotateAnimation.setValue(0);
+            }}
+          >
+            <LinearGradient
+              colors={['#7B83EB', '#4D4D9A']}
+              style={styles.flashcardCardGradient}
+            >
+              <Text style={styles.flashcardCardText}>{item.question}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-      {selectedFlashcard && (
+      {selectedIndex !== null && (
         <Modal
           transparent={true}
           animationType="fade"
-          visible={!!selectedFlashcard}
+          visible={selectedIndex !== null}
           onRequestClose={closePopup}
         >
           <View style={styles.modalContainer}>
             <TouchableOpacity style={styles.modalOverlay} onPress={closePopup} />
-            <View style={styles.cardWrapper}>
+            <TouchableOpacity
+              style={styles.cardWrapper}
+              activeOpacity={1} // Prevent double-tap
+              onPress={flipCard} // Flip the card on touch
+            >
               <Animated.View
                 style={[
                   styles.flashcard,
@@ -95,7 +112,7 @@ const FlashCardScreen = ({ route }) => {
                 ]}
               >
                 <View style={styles.flashcardFront}>
-                  <Text style={styles.flashcardText}>{selectedFlashcard.question}</Text>
+                  <Text style={styles.flashcardText}>{flashcards[selectedIndex].question}</Text>
                 </View>
               </Animated.View>
               <Animated.View
@@ -111,12 +128,9 @@ const FlashCardScreen = ({ route }) => {
                 ]}
               >
                 <View style={styles.flashcardBack}>
-                  <Text style={styles.flashcardText}>{selectedFlashcard.answer}</Text>
+                  <Text style={styles.flashcardText}>{flashcards[selectedIndex].answer}</Text>
                 </View>
               </Animated.View>
-            </View>
-            <TouchableOpacity style={styles.flipButton} onPress={flipCard}>
-              <Text style={styles.flipButtonText}>Flip</Text>
             </TouchableOpacity>
           </View>
         </Modal>
@@ -132,35 +146,56 @@ const styles = StyleSheet.create({
   },
   topContainer: {
     width: '100%',
-    height: 190,
+    height: 150,
     borderBottomLeftRadius: 50,
     borderBottomRightRadius: 50,
     overflow: 'hidden',
   },
   gradientTopContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
     paddingHorizontal: 20,
     paddingTop: 59,
-    justifyContent: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    left: 30,
+    top: 79,
   },
   sectionTitle: {
-    fontSize: 26,
+    fontSize: 28,
     color: '#FFF',
     fontWeight: '700',
-  },
-  flashcardList: {
-    padding: 20,
-  },
-  flashcardItem: {
-    backgroundColor: '#FFFFFF',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  flashcardText: {
-    fontSize: 16,
-    color: '#4D4D9A',
     textAlign: 'center',
+    marginBottom: 13,
+  },
+  flashcardGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    padding: 22,
+  },
+  flashcardCard: {
+    width: width / 2.5,
+    height: 150,
+    margin: 10,
+    borderRadius: 15,
+    overflow: 'hidden',
+    elevation: 5,
+  },
+  flashcardCardGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+  },
+  flashcardCardText: {
+    fontSize: 18,
+    color: '#FFF',
+    textAlign: 'center',
+    fontWeight: '600',
   },
   modalContainer: {
     flex: 1,
@@ -174,9 +209,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   cardWrapper: {
-    width: 300,
+    width: '80%',
     height: 200,
-    position: 'relative',
+    alignSelf: 'center',
   },
   flashcard: {
     width: '100%',
@@ -198,18 +233,6 @@ const styles = StyleSheet.create({
   flashcardBack: {
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  flipButton: {
-    marginTop: 20,
-    backgroundColor: '#7B83EB',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  flipButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
 
