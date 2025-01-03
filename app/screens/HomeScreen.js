@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,35 +14,40 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import FolderService from '../services/FolderService'
+import Storage from '../services/AsyncStorage';
+import CustomeAlert from '../components/CustomeAlert';
 
 const HomeScreen = ({ navigation }) => {
-  const [folders, setFolders] = useState([
-    { id: '1', name: 'Math' },
-    { id: '2', name: 'Science' },
-    { id: '3', name: 'History' },
-    { id: '4', name: 'Math' },
-    { id: '5', name: 'Science' },
-    { id: '6', name: 'History' },
-    { id: '7', name: 'Math' },
-    { id: '8', name: 'Science' },
-    { id: '9', name: 'History' },
-    { id: '10', name: 'Math' },
-    { id: '11', name: 'Science' },
-    { id: '12', name: 'History' },
-    { id: '13', name: 'Math' },
-    { id: '14', name: 'Science' },
-    { id: '15', name: 'History' },
-  ]);
+  const [folders, setFolders] = useState([]);
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderDescription, setNewFolderDescription] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isTopicSelected, setIsTopicSelected] = useState(false);
-  const [togglePosition] = useState(new Animated.Value(0)); // Animation for the toggle
+  const [togglePosition] = useState(new Animated.Value(0));
+
+  useEffect(()=>{
+    const getFolders = async () => {
+      try {
+        await FolderService.getFolders(await Storage.getItem('user_id'), await Storage.getItem('token'))
+        .then((res)=>{
+          setFolders(res.data.folders)
+        }).catch((e)=>{
+          CustomeAlert('Error', `${e.message}`)
+        })
+      } catch (err) {
+        CustomeAlert('Error', `${e.message}`)
+      }
+    };
+
+    getFolders();
+  }, [])
 
   const handleToggle = () => {
-    const toValue = isTopicSelected ? 0 : 1; // 0 = Text, 1 = Topic
+    const toValue = isTopicSelected ? 0 : 1;
     Animated.timing(togglePosition, {
       toValue,
       duration: 300,
@@ -52,12 +57,24 @@ const HomeScreen = ({ navigation }) => {
     setIsTopicSelected(!isTopicSelected);
   };
 
-  const handleAddFolder = () => {
+  const handleAddFolder = async () => {
     if (newFolderName.trim() !== '') {
-      const newFolder = { id: Date.now().toString(), name: newFolderName };
-      setFolders([...folders, newFolder]);
-      setNewFolderName('');
-      setIsModalVisible(false);
+      const payload = {
+        "name": newFolderName,
+        "description": newFolderDescription
+      }
+      await FolderService.createFolder(await Storage.getItem('user_id'), payload, await Storage.getItem('token'))
+      .then((res)=>{
+        const newFolder = {
+          name: res.data.folder.name,
+          description: res.data.folder.description
+        }
+        setFolders([...folders, newFolder]);
+        setNewFolderName('');
+        setIsModalVisible(false);  
+      }).catch((e)=>{
+        CustomeAlert('Unsuccessful', e.message, ()=>{setIsModalVisible(true);})
+      })
     }
   };
 
@@ -68,7 +85,7 @@ const HomeScreen = ({ navigation }) => {
   const renderFolder = ({ item }) => (
     <TouchableOpacity
       style={styles.folderContainer}
-      onPress={() => navigation.navigate('FlashCardScreen', { folderName: item.name })}
+      onPress={() => navigation.navigate('FlashCardScreen', { folderName: item.name, folderId: item.id })}
     >
       <Ionicons name="folder" size={80} color="#7B83EB" style={styles.folderIcon} />
       <Text style={styles.folderText}>{item.name}</Text>
@@ -130,7 +147,7 @@ const HomeScreen = ({ navigation }) => {
                     {
                       translateX: togglePosition.interpolate({
                         inputRange: [0, 1],
-                        outputRange: [-7, 42],
+                        outputRange: [-12, 40],
                       }),
                     },
                   ],
@@ -146,7 +163,6 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Modal for creating a new folder */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -158,10 +174,17 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.modalTitle}>Create New Folder</Text>
             <TextInput
               style={styles.newFolderInput}
-              placeholder="Enter folder name"
+              placeholder="Calculus"
               placeholderTextColor="#7B83EB"
               value={newFolderName}
               onChangeText={setNewFolderName}
+            />
+            <TextInput
+              style={[styles.newFolderInput, { height: 100, textAlignVertical: 'top'  }]}
+              placeholder="chapter 11 from class 11 in maths.."
+              placeholderTextColor="#7B83EB"
+              value={newFolderDescription}
+              onChangeText={setNewFolderDescription}
             />
             <View style={styles.modalButtonsContainer}>
               <TouchableOpacity
@@ -292,6 +315,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     fontSize: 16,
     color: '#7B83EB',
+    textAlignVertical: 'top',
   },
   modalButtonsContainer: {
     flexDirection: 'row',

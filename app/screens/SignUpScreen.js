@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Easing,
+  Easing
 } from 'react-native';
+import CustomeAlert from '../components/CustomeAlert';
 import { LinearGradient } from 'expo-linear-gradient';
+import UserService from '../services/UserService';
+import Storage from '../services/AsyncStorage';
 
 const FloatingInput = ({ label, value, onChangeText, secureTextEntry, keyboardType }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -69,6 +72,22 @@ const FloatingInput = ({ label, value, onChangeText, secureTextEntry, keyboardTy
 const FlipCardScreen = ({ navigation }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const rotateAnimation = useState(new Animated.Value(0))[0];
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const signup = () =>{
+    const payload = {
+      username: username,
+      email: email,
+      password, password
+    }
+    UserService.signup(payload).then((res)=>{
+      CustomeAlert("Successful", `${username}, ${res.data.message}`, flipCard)
+    }).catch((e)=>{
+      CustomeAlert("Unsuccessful", `${e.message}`)
+    })
+  }
 
   const flipCard = () => {
     Animated.timing(rotateAnimation, {
@@ -76,7 +95,7 @@ const FlipCardScreen = ({ navigation }) => {
       duration: 800,
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
-    }).start(() => setIsFlipped(!isFlipped));
+    }).start(() => setIsFlipped(!isFlipped));  
   };
 
   const frontRotateY = rotateAnimation.interpolate({
@@ -89,6 +108,20 @@ const FlipCardScreen = ({ navigation }) => {
     outputRange: ['180deg', '360deg'],
   });
 
+  const login = () =>{
+    const payload = {
+      email: email,
+      password: password
+    }
+    UserService.login(payload).then((res)=>{
+      Storage.setItem('token', res.data.token )
+      Storage.setItem('user_id', res.data.id)
+      navigateToHome()
+    }).catch((e)=>{
+      CustomeAlert("Login Unsuccessful", `${e.message}`)
+    })
+  }
+
   const navigateToHome = () => {
     navigation.navigate('Home');
   };
@@ -98,7 +131,6 @@ const FlipCardScreen = ({ navigation }) => {
       colors={['#7B83EB', '#ADA9FF', '#EDEDF2']}
       style={styles.container}
     >
-      {/* Front Side - Sign Up */}
       <Animated.View
         style={[
           styles.card,
@@ -117,10 +149,10 @@ const FlipCardScreen = ({ navigation }) => {
         >
           <Text style={styles.heading}>Welcome to Flashify</Text>
           <Text style={styles.subHeading}>Unlock the future of possibilities.</Text>
-          <FloatingInput label="Username" value="" onChangeText={() => { }} />
-          <FloatingInput label="Email" value="" onChangeText={() => { }} keyboardType="email-address" />
-          <FloatingInput label="Password" value="" onChangeText={() => { }} secureTextEntry />
-          <TouchableOpacity style={styles.button} onPress={flipCard}>
+          <FloatingInput label="Username" value={username} onChangeText={setUsername} />
+          <FloatingInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+          <FloatingInput label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+          <TouchableOpacity style={styles.button} onPress={signup}>
             <LinearGradient
               colors={['#7B83EB', '#ADA9FF']}
               start={{ x: 0, y: 0 }}
@@ -130,15 +162,15 @@ const FlipCardScreen = ({ navigation }) => {
               <Text style={styles.buttonText}>Sign Up</Text>
             </LinearGradient>
           </TouchableOpacity>
-          <TouchableOpacity onPress={flipCard}>
+          
             <Text style={styles.linkText}>
-              Already have an account? <Text style={styles.linkHighlight}>Sign In</Text>
+              Already have an account? 
+              <TouchableOpacity onPress={flipCard}><Text style={styles.linkHighlight}>  Sign In</Text>
+              </TouchableOpacity>
             </Text>
-          </TouchableOpacity>
         </LinearGradient>
       </Animated.View>
 
-      {/* Back Side - Sign In */}
       <Animated.View
         style={[
           styles.card,
@@ -158,9 +190,9 @@ const FlipCardScreen = ({ navigation }) => {
         >
           <Text style={styles.heading}>Welcome Back!</Text>
           <Text style={styles.subHeading}>Let's get you signed in.</Text>
-          <FloatingInput label="Email" value="" onChangeText={() => { }} keyboardType="email-address" />
-          <FloatingInput label="Password" value="" onChangeText={() => { }} secureTextEntry />
-          <TouchableOpacity style={styles.button} onPress={navigateToHome}>
+          <FloatingInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
+          <FloatingInput label="Password" value={password} onChangeText={setPassword} secureTextEntry />
+          <TouchableOpacity style={styles.button} onPress={login}>
             <LinearGradient
               colors={['#7B83EB', '#ADA9FF']}
               start={{ x: 0, y: 0 }}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,23 +11,38 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-
+import Storage from '../services/AsyncStorage';
+import FlashCardService from '../services/FlashCardService'
 const { width } = Dimensions.get('window');
 
 const FlashCardScreen = ({ route, navigation }) => {
   const { folderName } = route.params;
+  const { folderId } = route.params;
 
-  const [flashcards] = useState([
-    { id: '1', question: 'What is React?', answer: 'A JavaScript library for building user interfaces.' },
-    { id: '2', question: 'What is a component?', answer: 'A reusable piece of UI.' },
-    { id: '3', question: 'What is state?', answer: 'A way to store data in a component.' },
-  ]);
+  const [flashcards, setFlashcards] = useState([]);
 
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [rotateAnimation, setRotateAnimation] = useState(new Animated.Value(0));
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const flipCard = () => {
+  useEffect(()=>{
+    const getFlashcards = async () => {
+      try {
+        const token = await Storage.getItem('token');
+        const response = await FlashCardService.getFlashCards(folderId, token);
+  
+        console.log('Flashcards fetched:', response.data.flashcards);
+        setFlashcards(response.data.flashcards); // Assuming 'setFlashcards' is the state setter
+      } catch (err) {
+        console.error('Error fetching flashcards:', err);
+        CustomeAlert('Error', `${err.message}`);
+      }
+    };
+  
+    getFlashcards();
+  }, [folderId])
+
+  const flipCard = async () => {
     Animated.timing(rotateAnimation, {
       toValue: isFlipped ? 0 : 1,
       duration: 600,
@@ -144,13 +159,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#E0E7FF',
   },
+  
   topContainer: {
     width: '100%',
-    height: 150,
+    height: 140,
     borderBottomLeftRadius: 50,
     borderBottomRightRadius: 50,
     overflow: 'hidden',
   },
+  
   gradientTopContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -159,11 +176,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 59,
   },
+  
   backButton: {
     position: 'absolute',
     left: 30,
     top: 79,
   },
+
   sectionTitle: {
     fontSize: 28,
     color: '#FFF',
@@ -171,12 +190,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 13,
   },
+
   flashcardGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
     padding: 22,
   },
+
   flashcardCard: {
     width: width / 2.5,
     height: 150,
@@ -185,34 +206,40 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 5,
   },
+  
   flashcardCardGradient: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
   },
+  
   flashcardCardText: {
     fontSize: 18,
     color: '#FFF',
     textAlign: 'center',
     fontWeight: '600',
   },
+  
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  
   modalOverlay: {
     position: 'absolute',
     width: '100%',
     height: '100%',
   },
+  
   cardWrapper: {
     width: '80%',
     height: 200,
     alignSelf: 'center',
   },
+  
   flashcard: {
     width: '100%',
     height: '100%',
@@ -223,13 +250,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   cardBack: {
     transform: [{ rotateY: '180deg' }],
   },
+
   flashcardFront: {
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   flashcardBack: {
     justifyContent: 'center',
     alignItems: 'center',
