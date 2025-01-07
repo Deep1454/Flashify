@@ -116,6 +116,8 @@ const FlipCardScreen = ({ navigation }) => {
     UserService.login(payload).then((res)=>{
       Storage.setItem('token', res.data.token )
       Storage.setItem('user_id', res.data.id)
+      Storage.setItem('email', res.data.email)
+      Storage.setItem('username', res.data.username)
       navigateToHome()
     }).catch((e)=>{
       CustomeAlert("Login Unsuccessful", `${e.message}`)

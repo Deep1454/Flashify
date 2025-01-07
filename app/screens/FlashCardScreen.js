@@ -31,8 +31,7 @@ const FlashCardScreen = ({ route, navigation }) => {
         const token = await Storage.getItem('token');
         const response = await FlashCardService.getFlashCards(folderId, token);
   
-        console.log('Flashcards fetched:', response.data.flashcards);
-        setFlashcards(response.data.flashcards); // Assuming 'setFlashcards' is the state setter
+        setFlashcards(response.data.flashcards); 
       } catch (err) {
         console.error('Error fetching flashcards:', err);
         CustomeAlert('Error', `${err.message}`);
