@@ -9,6 +9,7 @@ const FlashCardService = {
     },
 
     async createFlashCard(folder_id, payload, token){
+        console.log("dsds")
         const response = await axios.post(`${baseURL}/${folder_id}`, payload, {headers: {Authorization: `Bearer ${token}`}} ,{withCredentials: true});
         return response
     },

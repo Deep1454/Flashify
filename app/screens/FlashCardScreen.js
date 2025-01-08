@@ -4,26 +4,36 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Modal,
   Animated,
   Easing,
   Dimensions,
+  TextInput,
+  FlatList
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import Storage from '../services/AsyncStorage';
 import FlashCardService from '../services/FlashCardService'
-const { width } = Dimensions.get('window');
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import CustomeAlert from '../components/CustomeAlert';
+import AIService from '../services/AIService';
+const { width, height } = Dimensions.get('window');
 
 const FlashCardScreen = ({ route, navigation }) => {
   const { folderName } = route.params;
   const { folderId } = route.params;
-
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState('')
   const [flashcards, setFlashcards] = useState([]);
-
+  const [isAddFlashCardModalVisible, setIsAddFlashCardModalVisible] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [rotateAnimation, setRotateAnimation] = useState(new Animated.Value(0));
   const [isFlipped, setIsFlipped] = useState(false);
+  const [prompts, setPrompts] = useState([])
+  const [responses, setResponses] = useState([])
+  const [prompt, setPrompt] = useState('')
+  const [isChatModalVisible, setIsChatModalVisible] = useState(false)
 
   useEffect(()=>{
     const getFlashcards = async () => {
@@ -33,25 +43,31 @@ const FlashCardScreen = ({ route, navigation }) => {
   
         setFlashcards(response.data.flashcards); 
       } catch (err) {
-        console.error('Error fetching flashcards:', err);
         CustomeAlert('Error', `${err.message}`);
       }
     };
-  
+
     getFlashcards();
   }, [folderId])
 
-  const flipCard = async () => {
-    Animated.timing(rotateAnimation, {
-      toValue: isFlipped ? 0 : 1,
-      duration: 600,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start(() => {
-      setIsFlipped(!isFlipped);
-    });
+  const flipCard = () => {
+    if (!isFlipped) {
+      Animated.timing(rotateAnimation, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => setIsFlipped(true));
+    } else {
+      Animated.timing(rotateAnimation, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => setIsFlipped(false));
+    }
   };
-
+  
   const frontRotateY = rotateAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
@@ -68,38 +84,101 @@ const FlashCardScreen = ({ route, navigation }) => {
     rotateAnimation.setValue(0);
   };
 
+  const handleAddFlashCard = async () => {
+    const payload = {
+      question: question,
+      answer: answer
+    }
+      await FlashCardService.createFlashCard(folderId, payload, await Storage.getItem('token'))
+      .then((res)=>{
+        setFlashcards([...flashcards, res.data.flashcard]);
+        CustomeAlert('Success', "Flashcard added", ()=>{setIsAddFlashCardModalVisible(false);})
+      }).catch((e)=>{
+        CustomeAlert('Unsuccessful', e.message, ()=>{setIsAddFlashCardModalVisible(false);})
+      })
+  };
+
+  const renderChats = ({ item, index }) => (
+    <View style={styles.chatContainer}>
+      {index % 2 === 0 ? (
+        <Text style={styles.promptText}>👤 {item}</Text>
+      ) : (
+        <Text style={styles.responseText}>🤖 {item}</Text>
+      )}
+    </View>
+  );
+
+  const handleSend = async() => {
+    if (prompt.trim() === '') return;
+    console.log(prompt)
+
+    let chat = ""
+    for(let i = 0; i < prompts.length; i++){
+      chat += "User prompt: " + prompts[i] + "\n"
+      chat += "Assistant resposnse: " + responses[i] + "\n"
+    }
+    chat += "User prompt: " + prompt
+    let payload = {
+      "prompt":chat
+    }
+
+    await AIService.interact_flashcards(folderId, payload, await Storage.getItem('token'))
+    .then((res)=>{
+      let chat_res = res.data.response;
+      setResponses([...responses, chat_res]);
+      setPrompts([...prompts, prompt]);
+    }).catch((e)=>{
+      CustomeAlert('Error', 'Try again later', ()=>{setIsChatModalVisible(false)})
+    })
+
+    setPrompt('');
+  };
   return (
     <View style={styles.container}>
+
+      {/* Navigation Bar */}
       <View style={styles.topContainer}>
         <LinearGradient colors={['#7B83EB', '#4D4D9A']} style={styles.gradientTopContainer}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={30} color="#FFF" />
           </TouchableOpacity>
           <Text style={styles.sectionTitle}>{folderName}</Text>
+          <TouchableOpacity
+            style={styles.createFolderButton}
+            onPress={() => setIsAddFlashCardModalVisible(true)}
+          >
+            <FontAwesome5 name="plus" size={25} color="#FFF" />
+          </TouchableOpacity>
         </LinearGradient>
       </View>
 
+      {/* FLashcards flat list */}
       <View style={styles.flashcardGrid}>
-        {flashcards.map((item, index) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.flashcardCard}
-            onPress={() => {
-              setSelectedIndex(index);
-              setIsFlipped(false);
-              rotateAnimation.setValue(0);
-            }}
-          >
-            <LinearGradient
-              colors={['#7B83EB', '#4D4D9A']}
-              style={styles.flashcardCardGradient}
-            >
-              <Text style={styles.flashcardCardText}>{item.question}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        ))}
+      <FlatList
+        data={flashcards}
+        renderItem={({ item, index }) => (
+        <TouchableOpacity
+          key={item.id}
+          style={styles.flashcardCard}
+          onPress={() => {
+            setSelectedIndex(index);
+            setIsFlipped(false);
+            rotateAnimation.setValue(0);
+          }}
+        >
+            
+          <LinearGradient colors={['#7B83EB', '#4D4D9A']} style={styles.flashcardCardGradient}>
+            <Text style={styles.flashcardCardText}>{item.question}</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+        />
+
       </View>
 
+      {/* Flash Card flipping */}
       {selectedIndex !== null && (
         <Modal
           transparent={true}
@@ -111,8 +190,8 @@ const FlashCardScreen = ({ route, navigation }) => {
             <TouchableOpacity style={styles.modalOverlay} onPress={closePopup} />
             <TouchableOpacity
               style={styles.cardWrapper}
-              activeOpacity={1} // Prevent double-tap
-              onPress={flipCard} // Flip the card on touch
+              activeOpacity={1} 
+              onPress={flipCard}
             >
               <Animated.View
                 style={[
@@ -149,6 +228,104 @@ const FlashCardScreen = ({ route, navigation }) => {
           </View>
         </Modal>
       )}
+
+      {/* Add flashcard modal */}
+      <Modal
+        visible={isAddFlashCardModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsAddFlashCardModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={()=>{setIsAddFlashCardModalVisible(false)}}>
+          <View style={styles.addFlashModalOverlay}>
+            <View style={styles.addFlashModalContent}>
+              <Text style={styles.addFlashModalTitle}>Create New Flashcard</Text>
+              <TextInput
+                style={styles.addFlashInput}
+                placeholder="Enter Question"
+                placeholderTextColor="#A4A9F1"
+                value={question}
+                onChangeText={setQuestion}
+              />
+              <TextInput
+                style={[styles.addFlashInput, styles.multilineInput]}
+                placeholder="Enter Answer"
+                placeholderTextColor="#A4A9F1"
+                value={answer}
+                onChangeText={setAnswer}
+                multiline={true}
+              />
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, styles.addButton]}
+                  onPress={handleAddFlashCard}
+                >
+                  <Text style={styles.buttonText}>Add</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setIsAddFlashCardModalVisible(false)}
+                >
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+{/* Chat Modal */}
+<Modal
+        visible={isChatModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsChatModalVisible(false)}
+      >
+        <View style={styles.chatModalContainer}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Chatify</Text>
+            <TouchableOpacity
+              onPress={() => setIsChatModalVisible(false)}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={30} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Chat List */}
+          <FlatList
+            data={[...prompts, ...responses]}
+            renderItem={renderChats}
+            keyExtractor={(item, index) => index.toString()}
+            style={styles.chatList}
+          />
+
+          {/* Input Section */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Ask me something..."
+              placeholderTextColor="#7B83EB"
+              value={prompt}
+              onChangeText={setPrompt}
+            />
+            <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+              <Ionicons name="send" size={24} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* chat bot button */}
+      <View style={styles.chatButtonContainer}>
+        <TouchableOpacity
+          onPress={() => setIsChatModalVisible(true)}
+        >
+          <FontAwesome5 name="comment-dots" size={25} color="#000" />
+        </TouchableOpacity>
+      </View>
+
     </View>
   );
 };
@@ -169,26 +346,28 @@ const styles = StyleSheet.create({
   
   gradientTopContainer: {
     flex: 1,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    position: 'relative',
     paddingHorizontal: 20,
     paddingTop: 59,
   },
   
-  backButton: {
-    position: 'absolute',
-    left: 30,
-    top: 79,
-  },
-
   sectionTitle: {
-    fontSize: 28,
+    fontSize: 30,
     color: '#FFF',
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 13,
   },
+  
+  backButton: {
+    padding: 10,
+  },
+  
+  createFolderButton: {
+    padding: 10,
+  },
+  
 
   flashcardGrid: {
     flexDirection: 'row',
@@ -198,7 +377,7 @@ const styles = StyleSheet.create({
   },
 
   flashcardCard: {
-    width: width / 2.5,
+    width: width / 2.6,
     height: 150,
     margin: 10,
     borderRadius: 15,
@@ -262,6 +441,156 @@ const styles = StyleSheet.create({
   flashcardBack: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  addFlashModalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  addFlashModalContent: {
+    width: '90%',
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
+  addFlashModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#4D4D9A',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  addFlashInput: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#F0F2FA',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#A4A9F1',
+  },
+  multilineInput: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  addButton: {
+    backgroundColor: '#7B83EB',
+  },
+  cancelButton: {
+    backgroundColor: '#E63946',
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#FFF',
+    fontWeight: 'bold',
+  },  
+  chatButtonContainer:{
+    width: 40,
+    position: 'absolute',
+    top: height - 100,
+    left: width - 100,
+    right: 0,
+    backgroundColor: 'rgb(255, 255, 255)',
+    padding: 5,
+    borderRadius: 15,
+    zIndex: 1000,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 10,
+  },
+  chatModalContainer: {
+    position: 'absolute',
+    bottom: 0,            
+    width: '100%',        
+    height: '80%',       
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',    
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,          
+    padding: 20,   
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  headerText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#4D4D9A',
+  },
+  closeButton: {
+    backgroundColor: '#4D4D9A',
+    borderRadius: 15,
+  },
+  chatList: {
+    flex: 1,
+    marginVertical: 10,
+  },
+  chatContainer: {
+    marginVertical: 5,
+  },
+  promptText: {
+    fontSize: 16,
+    color: '#4D4D9A',
+    marginBottom: 5,
+  },
+  responseText: {
+    fontSize: 16,
+    color: '#7B83EB',
+    marginBottom: 5,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingTop: 10,
+  },
+  textInput: {
+    flex: 1,
+    height: 40,
+    borderColor: '#7B83EB',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginRight: 10,
+  },
+  sendButton: {
+    backgroundColor: '#4D4D9A',
+    padding: 8,
+    borderRadius: 5,
   },
 });
 

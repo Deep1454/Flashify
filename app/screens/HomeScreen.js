@@ -21,11 +21,13 @@ import FolderService from '../services/FolderService'
 import Storage from '../services/AsyncStorage';
 import CustomeAlert from '../components/CustomeAlert';
 import AIService from '../services/AIService';
+import { Dropdown } from 'react-native-element-dropdown';
+import FlashCardService from '../services/FlashCardService'
 const { width, height } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
-  const [folders, setFolders] = useState([]);
 
+  const [folders, setFolders] = useState([]);
   const [isFolderModalVisible, setIsFolderModalVisible] = useState(false);
   const [isGenFlashCModalVisible, setIsGenFlashCModalVisible] = useState(false);
   const [isProfileModalVisible, setIsProfileModalVisible] = useState(false);
@@ -38,10 +40,17 @@ const HomeScreen = ({ navigation }) => {
   const [togglePosition] = useState(new Animated.Value(0));
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [buttonPosition, setButtonPosition] = useState(null);
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [flashcards, setFlashcards] = useState([])
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [flashcards, setFlashcards] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [dropDown, setDropDown] = useState([]);
+  const [isFolderFocus, setIsFolderFocus] = useState(false);
+  const [baseFolder, setBaseFolder] = useState('Select Folder');
+  const [isBaseFolderFocus, setIsBaseFolderFocus] = useState(false);
+  const [flashcard, setFlashcard] = useState({ answer:"", question:""})
+  const [rotateAnimation, setRotateAnimation] = useState(new Animated.Value(0));
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(()=>{
     const getFolders = async () => {
@@ -61,7 +70,18 @@ const HomeScreen = ({ navigation }) => {
     };
 
     getFolders();
+    populateDropDown();
   }, [])
+
+  const populateDropDown = ()=>{
+    let temp_fol_val = {label: '', value: ''};
+    let folder_list = []
+    folders.forEach(element => {
+      temp_fol_val = {label: `${element.name}`, value: `${element.id}`};
+      folder_list.push(temp_fol_val)
+    });
+    setDropDown(folder_list)
+  }
 
   const toggleDropdown = () => {
     setDropdownVisible(!dropdownVisible);
@@ -105,6 +125,19 @@ const HomeScreen = ({ navigation }) => {
         CustomeAlert('Unsuccessful', e.message, ()=>{setIsFolderModalVisible(true);})
       })
     }
+  };
+  
+  const handleAddFlashCard = async () => {
+    const payload = {
+      question: flashcard.question,
+      answer: flashcard.answer
+    }
+      await FlashCardService.createFlashCard(baseFolder, payload, await Storage.getItem('token'))
+      .then((res)=>{
+        CustomeAlert('Success', "Flashcard added", ()=>{setIsAddGenFlashCardModalVisible(false); setIsGenFlashCModalVisible(true);})
+      }).catch((e)=>{
+        CustomeAlert('Unsuccessful', e.message, ()=>{setIsAddGenFlashCardModalVisible(false); setIsFolderModalVisible(true);})
+      })
   };
 
   const logout = async()=>{
@@ -161,11 +194,43 @@ const HomeScreen = ({ navigation }) => {
   const renderGenFlashcards = ({ item }) => (
     <TouchableOpacity
     style={styles.flashcardCon}
-      onPress={() => console.log(item.question)}
+      onPress={() => {
+        setIsGenFlashCModalVisible(false);
+        setIsAddGenFlashCardModalVisible(true);
+        setFlashcard({answer:item.answer, question:item.question})
+        setIsGenFlashCModalVisible(false);
+      }}
     >
       <Text style={styles.genFlashcardText}>{item.question}</Text>
     </TouchableOpacity>
   );
+
+  const closePopup = () => {
+    setSelectedIndex(null);
+    setIsFlipped(false);
+    rotateAnimation.setValue(0);
+  };
+
+  const flipCard = async () => {
+    Animated.timing(rotateAnimation, {
+      toValue: isFlipped ? 0 : 1,
+      duration: 600,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      setIsFlipped(!isFlipped);
+    });
+  };
+
+  const frontRotateY = rotateAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '180deg'],
+  });
+
+  const backRotateY = rotateAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['180deg', '360deg'],
+  });
 
   return (
     <KeyboardAvoidingView
@@ -305,14 +370,14 @@ const HomeScreen = ({ navigation }) => {
       >
           <TouchableWithoutFeedback onPress={() => setIsProfileModalVisible(false)}>
 
-        <View style={styles.modalContainer}>
+        <View style={styles.profilemodalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Profile</Text>
             <Text
-              style={styles.newFolderInput}
+              style={styles.modalText}
               >Username: {username}</Text>
             <Text
-              style={styles.newFolderInput}
+              style={styles.modalText}
               >Email: {email}</Text>
             <View style={styles.modalButtonsContainer}>
               <TouchableOpacity
@@ -334,8 +399,8 @@ const HomeScreen = ({ navigation }) => {
         animationType="slide"
         onRequestClose={() => setIsFolderModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <View style={styles.addFolderModalContainer}>
+          <View style={styles.addFolderModalContent}>
             <Text style={styles.modalTitle}>Create New Folder</Text>
             <TextInput
               style={styles.newFolderInput}
@@ -375,9 +440,9 @@ const HomeScreen = ({ navigation }) => {
         animationType="slide"
         onRequestClose={() => setIsGenFlashCModalVisible(false)}
       >
-    <View style={styles.modalContainer}>
-      <View style={styles.modalContent}>
-        <Text style={styles.modalTitle}>Generated Flashcards</Text>
+    <View style={styles.genFlashModalContainer}>
+      <View style={styles.genFlashModalContent}>
+        <Text style={styles.genFlashModalTitle}>Generated Flashcards</Text>
         <FlatList
           data={flashcards}
           renderItem={renderGenFlashcards}
@@ -401,36 +466,80 @@ const HomeScreen = ({ navigation }) => {
         onRequestClose={() => setIsAddGenFlashCardModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Folder</Text>
-            <TextInput
-              style={styles.newFolderInput}
-              placeholder="Calculus"
-              placeholderTextColor="#7B83EB"
-              value={newFolderName}
-              onChangeText={setNewFolderName}
-            />
-            <TextInput
-              style={[styles.newFolderInput, { height: 100, textAlignVertical: 'top'  }]}
-              placeholder="chapter 11 from class 11 in maths.."
-              placeholderTextColor="#7B83EB"
-              value={newFolderDescription}
-              onChangeText={setNewFolderDescription}
+          <TouchableOpacity
+            style={styles.cardWrapper}
+            activeOpacity={1} // Prevent double-tap
+            onPress={flipCard} // Flip the card on touch
+          >
+            <Animated.View
+              style={[
+                styles.flashcard,
+                {
+                  transform: [
+                    { perspective: 1200 },
+                    { rotateY: frontRotateY },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.flashcardFront}>
+                <Text style={styles.flashcardText}>{flashcard.question}</Text>
+              </View>
+            </Animated.View>
+            <Animated.View
+              style={[
+                styles.flashcard,
+                styles.cardBack,
+                {
+                  transform: [
+                    { perspective: 1200 },
+                    { rotateY: backRotateY },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.flashcardBack}>
+                <Text style={styles.flashcardText}>{flashcard.answer}</Text>
+              </View>
+            </Animated.View>
+          </TouchableOpacity>
+            <Dropdown
+            style={[styles.dropdown, isFolderFocus && { borderColor: 'blue' }]}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            inputSearchStyle={styles.inputSearchStyle}
+            iconStyle={styles.iconStyle}
+            data={dropDown}
+            search
+            maxHeight={300}
+            labelField="label"
+            valueField="value"
+            placeholder={!isFolderFocus ? 'Select item' : '...'}
+            searchPlaceholder="Search..."
+            value={baseFolder}
+            onFocus={() => setIsBaseFolderFocus(true)}
+            onBlur={() => setIsBaseFolderFocus(false)}
+            onChange={item => {
+              setBaseFolder(item.value);
+              setIsBaseFolderFocus(false);
+            }}
             />
             <View style={styles.modalButtonsContainer}>
               <TouchableOpacity
                 style={styles.addFolderButton}
-                onPress={handleAddFolder}
+                onPress={handleAddFlashCard}
               >
                 <Text style={styles.addFolderButtonText}>Add</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.cancelButton}
-                onPress={() => setIsFolderModalVisible(false)}
+                onPress={() => {
+                  setIsAddGenFlashCardModalVisible(false)
+                  setIsGenFlashCModalVisible(true)
+                }}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -583,7 +692,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
+  profilemodalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
   modalContent: {
+    width: '60%',
+    paddingTop: 20,
+    height: '25%',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText:{
+    width: '90%',
+    backgroundColor: '#E0E7FF',
+    borderRadius: 12,
+    padding: 10,
+    marginVertical: 10,
+    fontSize: 16,
+    color: '#7B83EB',
+    alignSelf: 'center',
+    textAlignVertical: 'center',
+  },
+  addFolderModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  addFolderModalContent: {
+    width: '60%',
+    paddingTop: 20,
+    height: '30%',
+    borderRadius: 10,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  genFlashModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  genFlashModalContent: {
     width: '90%',
     paddingTop: 20,
     height: '75%',
@@ -595,7 +762,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  modalTitle: {
+  genFlashModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -622,36 +789,34 @@ const styles = StyleSheet.create({
   },
   modalButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around', 
     width: '100%',
+    paddingHorizontal: 20,
+    marginTop: 20, 
   },
   addFolderButton: {
+    flex: 1, 
     backgroundColor: '#7B83EB',
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 8,
+    paddingVertical: 12,
     alignItems: 'center',
-    flex: 1,
-    marginRight: 5,
+    marginHorizontal: 5, 
   },
   addFolderButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    color: 'white',
+    fontWeight: 'bold',
   },
   cancelButton: {
-    backgroundColor: '#E0E7FF',
-    borderRadius: 12,
-    padding: 2,
+    flex: 1, 
+    backgroundColor: '#E0E7FF', 
+    borderRadius: 8,
+    paddingVertical: 12,
     alignItems: 'center',
-    alignSelf: 'center',
-    flex: 1,
-    marginBottom: 15,
-    width: '50%'
+    marginHorizontal: 5, 
   },
   cancelButtonText: {
-    color: '#7B83EB',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#7B83EB', 
+    fontWeight: 'bold',
   },
   bottomContainer: {
     width: '90%',
@@ -727,6 +892,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  dropdown: {
+    width: '75%',
+    height: 50,
+    borderColor: 'gray',
+    borderWidth: 0.5,
+    borderRadius: 8,
+    marginTop: 20,
+    paddingHorizontal: 15,
+    backgroundColor: 'rgb(255, 255, 255)', 
+  },
+
+  placeholderStyle: {
+    fontSize: 16,
+  },
+
+  selectedTextStyle: {
+    fontSize: 16,
+  },
+
+  inputSearchStyle: {
+    height: 40,
+    fontSize: 16,
+  },
+
+  iconStyle: {
+    width: 20,
+    height: 20,
+  },
+
+  modalOverlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+
+  cardWrapper: {
+    width: '80%',
+    height: 200,
+    alignSelf: 'center',
+  },
+  
+  flashcard: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    borderRadius: 15,
+    backgroundColor: '#FFFFFF',
+    backfaceVisibility: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  cardBack: {
+    transform: [{ rotateY: '180deg' }],
+  },
+
+  flashcardFront: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  flashcardBack: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default HomeScreen;
