@@ -110,7 +110,6 @@ const FlashCardScreen = ({ route, navigation }) => {
 
   const handleSend = async() => {
     if (prompt.trim() === '') return;
-    console.log(prompt)
 
     let chat = ""
     for(let i = 0; i < prompts.length; i++){
@@ -370,6 +369,7 @@ const styles = StyleSheet.create({
   
 
   flashcardGrid: {
+    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',

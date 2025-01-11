@@ -60,7 +60,7 @@ const HomeScreen = ({ navigation }) => {
         await FolderService.getFolders(await Storage.getItem('user_id'), await Storage.getItem('token'))
         .then((res)=>{
           setFolders(res.data.folders)
-          
+          populateDropDown(res.data.folders);
         }).catch((e)=>{ 
           CustomeAlert('Error')
         })
@@ -68,19 +68,15 @@ const HomeScreen = ({ navigation }) => {
         CustomeAlert('Error')
       }
     };
-
     getFolders();
-    populateDropDown();
   }, [])
 
-  const populateDropDown = ()=>{
+  const populateDropDown = (fols)=>{
     let temp_fol_val = {label: '', value: ''};
-    let folder_list = []
-    folders.forEach(element => {
+    fols.forEach(element => {
       temp_fol_val = {label: `${element.name}`, value: `${element.id}`};
-      folder_list.push(temp_fol_val)
+      dropDown.push(temp_fol_val)
     });
-    setDropDown(folder_list)
   }
 
   const toggleDropdown = () => {
@@ -381,7 +377,7 @@ const HomeScreen = ({ navigation }) => {
               >Email: {email}</Text>
             <View style={styles.modalButtonsContainer}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.button, styles.cancelButton]}
                 onPress={() => setIsProfileModalVisible(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -410,7 +406,7 @@ const HomeScreen = ({ navigation }) => {
               onChangeText={setNewFolderName}
             />
             <TextInput
-              style={[styles.newFolderInput, { height: 100, textAlignVertical: 'top'  }]}
+              style={[styles.newFolderInput, styles.multilineInput]}
               placeholder="chapter 11 from class 11 in maths.."
               placeholderTextColor="#7B83EB"
               value={newFolderDescription}
@@ -424,7 +420,7 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.addFolderButtonText}>Add</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.button, styles.cancelButton]}
                 onPress={() => setIsFolderModalVisible(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -450,7 +446,7 @@ const HomeScreen = ({ navigation }) => {
           numColumns={2}
         />
         <TouchableOpacity
-          style={styles.cancelButton}
+          style={[styles.button, styles.cancelButton]}
           onPress={() => setIsGenFlashCModalVisible(false)}
         >
           <Text style={styles.cancelButtonText}>Close</Text>
@@ -532,7 +528,7 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.addFolderButtonText}>Add</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={[styles.button, styles.cancelButton]}
                 onPress={() => {
                   setIsAddGenFlashCardModalVisible(false)
                   setIsGenFlashCModalVisible(true)
@@ -701,7 +697,7 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '60%',
     paddingTop: 20,
-    height: '25%',
+    height: '30%',
     borderRadius: 10,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
@@ -711,8 +707,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#4D4D9A',
+    marginBottom: 20,
     textAlign: 'center',
   },
   modalText:{
@@ -728,21 +726,21 @@ const styles = StyleSheet.create({
   },
   addFolderModalContainer: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   addFolderModalContent: {
-    width: '60%',
-    paddingTop: 20,
-    height: '30%',
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    width: '90%',
+    backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
   genFlashModalContainer: {
     flex: 1,
@@ -779,12 +777,18 @@ const styles = StyleSheet.create({
   },
   newFolderInput: {
     width: '100%',
-    backgroundColor: '#E0E7FF',
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 15,
+    height: 50,
+    backgroundColor: '#F0F2FA',
+    borderRadius: 10,
+    paddingHorizontal: 15,
     fontSize: 16,
-    color: '#7B83EB',
+    color: '#333',
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#A4A9F1',
+  },
+  multilineInput: {
+    height: 100,
     textAlignVertical: 'top',
   },
   modalButtonsContainer: {
@@ -806,16 +810,18 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  cancelButton: {
-    flex: 1, 
-    backgroundColor: '#E0E7FF', 
-    borderRadius: 8,
+  button: {
+    flex: 1,
     paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
-    marginHorizontal: 5, 
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#E63946',
   },
   cancelButtonText: {
-    color: '#7B83EB', 
+    color: '#FFFFFF', 
     fontWeight: 'bold',
   },
   bottomContainer: {

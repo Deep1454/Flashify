@@ -1,5 +1,6 @@
 import axios from 'axios';
-const baseURL = "http://192.168.2.57:5000/ai";
+import {API_URL} from '@env';
+const baseURL = `http://${API_URL}:5000/ai`;
 
 const AIService = {
 

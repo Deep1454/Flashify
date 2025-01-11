@@ -1,5 +1,6 @@
 import axios from 'axios';
-const baseURL = "http://192.168.2.57:5000/folder";
+import {API_URL} from '@env';
+const baseURL = `http://${API_URL}:5000/folder`;
 
 const FolderService = {
 

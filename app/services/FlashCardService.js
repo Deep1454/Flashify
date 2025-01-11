@@ -1,5 +1,6 @@
 import axios from 'axios';
-const baseURL = "http://192.168.2.57:5000/flashcard";
+import {API_URL} from '@env';
+const baseURL = `http://${API_URL}:5000/flashcard`;
 
 const FlashCardService = {
 
@@ -9,7 +10,6 @@ const FlashCardService = {
     },
 
     async createFlashCard(folder_id, payload, token){
-        console.log("dsds")
         const response = await axios.post(`${baseURL}/${folder_id}`, payload, {headers: {Authorization: `Bearer ${token}`}} ,{withCredentials: true});
         return response
     },
